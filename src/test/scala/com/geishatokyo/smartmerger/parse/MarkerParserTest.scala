@@ -12,12 +12,12 @@ class MarkerParserTest extends FlatSpec with Matchers {
     val parser = MarkerParser.doubleSharpParser()
 
     val text = """There are no markers."""
-    val blocks = parser.parse(text)
+    val parsedData = parser.parse(text)
 
-    println(blocks)
+    println(parsedData.blocks)
 
-    assert(blocks.size == 1)
-    assert(blocks(0) == TextBlock(text))
+    assert(parsedData.blocks.size == 1)
+    assert(parsedData.blocks(0) == TextBlock(text))
 
   }
 
@@ -38,11 +38,11 @@ class MarkerParserTest extends FlatSpec with Matchers {
         |
         |aaa
       """.stripMargin
-    val blocks = parser.parse(text)
+    val parsedData = parser.parse(text)
 
-    println(blocks)
+    println(parsedData.blocks)
 
-    assert(blocks.size == 7)
+    assert(parsedData.blocks.size == 7)
 
   }
 }

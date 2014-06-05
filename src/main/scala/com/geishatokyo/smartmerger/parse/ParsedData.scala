@@ -5,7 +5,7 @@ import com.geishatokyo.smartmerger.TopLevel
 /**
  * Created by takeshita on 2014/06/03.
  */
-case class ParsedData(blocks : List[Block]) {
+case class ParsedData(blocks : Block*) {
 
   lazy val nameToBlock = {
     blocks.collect({

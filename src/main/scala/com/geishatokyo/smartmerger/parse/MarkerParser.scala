@@ -68,7 +68,7 @@ class MarkerParser(blockParsers : List[BlockParser[Block]]) {
       blocks = TextBlock(buffer.toString) :: blocks
     }
 
-    blocks.reverse
+    ParsedData(blocks.reverse :_*)
 
   }
 }

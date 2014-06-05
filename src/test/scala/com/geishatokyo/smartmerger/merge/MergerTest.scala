@@ -12,7 +12,7 @@ class MergerTest extends FlatSpec with ShouldMatchers {
   "Replace merge" should "merge" in {
     val merger = Merger()
 
-    val parsedData = ParsedData( MarkerParser.doubleSlashParser().parse(
+    val parsedData =  MarkerParser.doubleSlashParser().parse(
       """
         |//@replace[rep1]
         |here is replaced
@@ -29,17 +29,15 @@ class MergerTest extends FlatSpec with ShouldMatchers {
         |code is insert up on this line
         |
       """.stripMargin)
-    )
 
     val mergeData = MergeData(
-      List(
         ReplaceMBlock(Some("rep1"),"replaced!"),
         ReplaceMBlock(None,"anonymous is replaced!"),
         ReplaceMBlock(Some("rep1"),"replaced 2!"),
         ReplaceMBlock(Some("ins1"),"inserted!"),
         RegexConditionInsertMBlock(Some("ins1"),"""def\s+hoge\(\)""".r,"def hoge() = { this is not inserted.Because regex code already exists.}"),
         RegexConditionInsertMBlock(Some("ins1"),"""def\s+fuga\(\)""".r,"def fuga() = this is inserted.")
-    ))
+    )
 
     val result = merger.merge(parsedData,mergeData)
     println(result.rawString)
@@ -52,7 +50,7 @@ class MergerTest extends FlatSpec with ShouldMatchers {
 
     val merger = Merger()
 
-    val baseCode = ParsedData( MarkerParser.doubleSlashParser().parse(
+    val baseCode = MarkerParser.doubleSlashParser().parse(
       """
         |
         |//@hold
@@ -68,9 +66,8 @@ class MergerTest extends FlatSpec with ShouldMatchers {
         |
         |
       """.stripMargin)
-    )
 
-    val mergeCode = ParsedData(MarkerParser.doubleSlashParser().parse(
+    val mergeCode = MarkerParser.doubleSlashParser().parse(
       """
         |
         |Yes
@@ -85,7 +82,7 @@ class MergerTest extends FlatSpec with ShouldMatchers {
         |//@end
         |Yes!Yes!
       """.stripMargin
-    ))
+    )
 
     val result = merger.merge(baseCode,mergeCode)
 

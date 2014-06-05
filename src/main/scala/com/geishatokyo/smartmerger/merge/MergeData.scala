@@ -6,7 +6,7 @@ import com.geishatokyo.smartmerger.parse.AnonymousBlockNameRule
 /**
  * Created by takeshita on 2014/06/03.
  */
-case class MergeData(blocks : List[MergeBlock]) {
+case class MergeData(blocks : MergeBlock*) {
 
   val nameRule = AnonymousBlockNameRule
 

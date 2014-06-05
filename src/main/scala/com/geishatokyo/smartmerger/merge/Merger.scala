@@ -49,7 +49,7 @@ case class Merger(mergeRule : MergeRule) {
       }
       case b => b
     })
-    ParsedData(blocks)
+    ParsedData(blocks :_*)
   }
 
   def merge(parsedData : ParsedData,mergeData : MergeData) : ParsedData = {
@@ -106,6 +106,6 @@ case class Merger(mergeRule : MergeRule) {
     })
 
 
-    ParsedData(blocks)
+    ParsedData(blocks :_*)
   }
 }
