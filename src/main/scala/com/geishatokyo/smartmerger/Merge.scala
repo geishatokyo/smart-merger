@@ -13,15 +13,21 @@ object Merge {
   var mergeRule = new MergeRule
 
   def forScala = {
-    new Merger(mergeRule)
+    val parser = MarkerParser.doubleSlashParser()
+    val merger = new Merger(mergeRule)
+    Merge(parser,merger)
   }
 
   def forCSharp = {
-    new Merger(mergeRule)
+    val parser = MarkerParser.doubleSlashParser()
+    val merger = new Merger(mergeRule)
+    Merge(parser,merger)
   }
 
   def forMySQL = {
-    new Merger(mergeRule)
+    val parser = MarkerParser.doubleSharpParser()
+    val merger = new Merger(mergeRule)
+    Merge(parser,merger)
   }
 
 }
