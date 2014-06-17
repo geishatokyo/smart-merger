@@ -46,6 +46,24 @@ object Merger {
     val merger = new Injector(mergeRule)
     Merger(parser,merger)
   }
+
+  /**
+   * //@insert[hoge]
+   *
+   * //@replace[name]
+   * //@end
+   *
+   * //@hold[fuga]
+   * //@end
+   *
+   * タイプのタグを使用
+   * @return
+   */
+  def forJava = {
+    val parser = MarkerParser.doubleSlashParser()
+    val merger = new Injector(mergeRule)
+    Merger(parser,merger)
+  }
   /**
    * ##insert[hoge]
    *
@@ -90,8 +108,8 @@ case class Merger(parser : MarkerParser,merger : Injector){
   def replaceMerge( filePath : String, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
     replaceMerge(new File(filePath),codeToReplace,codeIfFileNotFound)
   }
-  def replaceMerge( file : File, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
-    val file = RichFile.fromFile(file)
+  def replaceMerge( _file : File, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
+    val file = RichFile.fromFile(_file)
     val parsedData = if(file.exists()){
       Logger.log("Merge file: " + file.getAbsolutePath)
       parser.parse(file.readAsString())
@@ -106,8 +124,8 @@ case class Merger(parser : MarkerParser,merger : Injector){
   def holdMerge( filePath : String, generatedCode : String) : String = {
     holdMerge(new File(filePath),generatedCode)
   }
-  def holdMerge( file : File, generatedCode : String) : String = {
-    val file = RichFile.fromFile(file)
+  def holdMerge( _file : File, generatedCode : String) : String = {
+    val file = RichFile.fromFile(_file)
     if(file.exists()){
       val base = parser.parse(file.readAsString())
       val toMerge = parser.parse(generatedCode)

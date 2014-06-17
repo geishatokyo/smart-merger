@@ -23,3 +23,9 @@ case class RegexConditionInjection(name : Option[String],regex : Regex,text : St
     regex.findFirstMatchIn(code).isEmpty
   }
 }
+case class ContainsConditionInjection(name : Option[String], matchText : String,text : String) extends ConditionalInjection{
+  override def needInsert(parsedData : ParsedData): Boolean = {
+    val code = parsedData.rawString
+    !code.contains(matchText)
+  }
+}
