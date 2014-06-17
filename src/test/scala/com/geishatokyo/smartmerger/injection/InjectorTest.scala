@@ -1,4 +1,4 @@
-package com.geishatokyo.smartmerger.merge
+package com.geishatokyo.smartmerger.injection
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
@@ -7,10 +7,10 @@ import com.geishatokyo.smartmerger.parse.{ParsedData, MarkerParser}
 /**
  * Created by takeshita on 2014/06/04.
  */
-class MergerTest extends FlatSpec with ShouldMatchers {
+class InjectorTest extends FlatSpec with ShouldMatchers {
 
   "Replace merge" should "merge" in {
-    val merger = Merger()
+    val merger = Injector()
 
     val parsedData =  MarkerParser.doubleSlashParser().parse(
       """
@@ -27,16 +27,20 @@ class MergerTest extends FlatSpec with ShouldMatchers {
         |
         |//@insert[ins1]
         |code is insert up on this line
+        |//@insert[ins2]
+        |a
+        |a
         |
       """.stripMargin)
 
-    val mergeData = MergeData(
-        ReplaceMBlock(Some("rep1"),"replaced!"),
-        ReplaceMBlock(None,"anonymous is replaced!"),
-        ReplaceMBlock(Some("rep1"),"replaced 2!"),
-        ReplaceMBlock(Some("ins1"),"inserted!"),
-        RegexConditionInsertMBlock(Some("ins1"),"""def\s+hoge\(\)""".r,"def hoge() = { this is not inserted.Because regex code already exists.}"),
-        RegexConditionInsertMBlock(Some("ins1"),"""def\s+fuga\(\)""".r,"def fuga() = this is inserted.")
+    val mergeData = InjectionData(
+        ReplaceInjection(Some("rep1"),"replaced!"),
+        ReplaceInjection(None,"anonymous is replaced!"),
+        ReplaceInjection(Some("rep1"),"replaced 2!"),
+        ReplaceInjection(Some("ins1"),"inserted!"),
+        RegexConditionInjection(Some("ins1"),"""def\s+hoge\(\)""".r,"def hoge() = { this is not inserted.Because regex code already exists.}"),
+        RegexConditionInjection(Some("ins1"),"""def\s+fuga\(\)""".r,"def fuga() = this is inserted."),
+        RegexConditionInjection(Some("ins2"),"""def\s+hoge\(\)""".r,"def hoge2() = this is inserted.")
     )
 
     val result = merger.merge(parsedData,mergeData)
@@ -48,7 +52,7 @@ class MergerTest extends FlatSpec with ShouldMatchers {
 
   "Hold merge" should "merge" in {
 
-    val merger = Merger()
+    val merger = Injector()
 
     val baseCode = MarkerParser.doubleSlashParser().parse(
       """

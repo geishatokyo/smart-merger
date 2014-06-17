@@ -1,4 +1,4 @@
-package com.geishatokyo.smartmerger.merge
+package com.geishatokyo.smartmerger.injection
 
 import com.geishatokyo.smartmerger.TopLevel
 import com.geishatokyo.smartmerger.parse.AnonymousBlockNameRule
@@ -6,7 +6,7 @@ import com.geishatokyo.smartmerger.parse.AnonymousBlockNameRule
 /**
  * Created by takeshita on 2014/06/03.
  */
-case class MergeData(blocks : MergeBlock*) {
+case class InjectionData(blocks : InjectionBlock*) {
 
   val nameRule = AnonymousBlockNameRule
 

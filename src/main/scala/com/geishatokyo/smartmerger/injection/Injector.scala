@@ -1,4 +1,4 @@
-package com.geishatokyo.smartmerger.merge
+package com.geishatokyo.smartmerger.injection
 
 import com.geishatokyo.smartmerger.parse._
 import com.geishatokyo.smartmerger.TopLevel
@@ -6,13 +6,13 @@ import com.geishatokyo.smartmerger.TopLevel
 /**
  * Created by takeshita on 2014/06/03.
  */
-object Merger{
+object Injector{
 
-  def apply() : Merger = Merger(new MergeRule())
+  def apply() : Injector = Injector(new InjectionRule())
 }
 
 
-case class Merger(mergeRule : MergeRule) {
+case class Injector(mergeRule : InjectionRule) {
 
   def merge(remainsInsideHold : ParsedData,notRemainsInsideHold : ParsedData) : ParsedData = {
 
@@ -52,7 +52,7 @@ case class Merger(mergeRule : MergeRule) {
     ParsedData(blocks :_*)
   }
 
-  def merge(parsedData : ParsedData,mergeData : MergeData) : ParsedData = {
+  def merge(parsedData : ParsedData,mergeData : InjectionData) : ParsedData = {
 
     if(parsedData.topLevel == TopLevel.Hold){
       throw new Exception(s"ParsedData top level must be Replace.But was ${parsedData.topLevel}")
@@ -76,14 +76,16 @@ case class Merger(mergeRule : MergeRule) {
       mergeData.getBlocks(name) match{
         case Nil => None
         case list => {
-          Some(list.flatMap(_ match{
-            case cib : ConditionalInsertMBlock => {
+          val replaceTexts = list.flatMap(_ match{
+            case cib : ConditionalInjection => {
               if (cib.needInsert(parsedData)) {
                 Some(cib.text)
               } else None
             }
-            case r : ReplaceMBlock => Some(r.text)
-          }).mkString(System.lineSeparator()))
+            case r : ReplaceInjection => Some(r.text)
+          })
+          if(replaceTexts.size > 0) Some(replaceTexts.mkString(System.lineSeparator()))
+          else None
         }
       }
     }
