@@ -110,16 +110,23 @@ case class Merger(parser : MarkerParser,merger : Injector){
   }
   def replaceMerge( _file : File, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
     val file = RichFile.fromFile(_file)
+    var before = ""
     val parsedData = if(file.exists()){
-      Logger.log("Merge file: " + file.getAbsolutePath)
-      parser.parse(file.readAsString())
+      before = file.readAsString()
+      parser.parse(before)
     }else{
       Logger.log("Create new file: " + file.getAbsolutePath)
       parser.parse(codeIfFileNotFound)
     }
     val s =merger.merge(parsedData,codeToReplace).rawString
-    file.write(s)
-    s
+    if(s != before) {
+      Logger.log("Merge file: " + file.getAbsolutePath)
+      file.write(s)
+      s
+    }else{
+      Logger.log("File:" + file.getAbsolutePath + " is not changed")
+      s
+    }
   }
   def holdMerge( filePath : String, generatedCode : String) : String = {
     holdMerge(new File(filePath),generatedCode)
@@ -127,12 +134,18 @@ case class Merger(parser : MarkerParser,merger : Injector){
   def holdMerge( _file : File, generatedCode : String) : String = {
     val file = RichFile.fromFile(_file)
     if(file.exists()){
-      val base = parser.parse(file.readAsString())
+      val before = file.readAsString()
+      val base = parser.parse(before)
       val toMerge = parser.parse(generatedCode)
       val merged = merger.merge(base,toMerge)
-      Logger.log("Merge file: " + file.getAbsolutePath)
-      file.write(merged.rawString)
-      merged.rawString
+      if(merged != before) {
+        Logger.log("Merge file: " + file.getAbsolutePath)
+        file.write(merged.rawString)
+        merged.rawString
+      }else{
+        Logger.log("File:" + file.getAbsolutePath + " is not changed")
+        before
+      }
     }else{
       Logger.log("Create new file: " + file.getAbsolutePath)
       file.write(generatedCode)
