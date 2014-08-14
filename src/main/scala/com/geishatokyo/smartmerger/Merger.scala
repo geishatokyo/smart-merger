@@ -102,12 +102,33 @@ object Merger {
 
 }
 
+/**
+ * マージの一連の処理を行うクラス
+ * @param parser
+ * @param merger
+ */
 case class Merger(parser : MarkerParser,merger : Injector){
 
   import com.geishatokyo.codegen.util.RichFile
+
+  /**
+   * 指定したファイルのreplaceブロック内を置き換える。
+   * @param filePath
+   * @param codeToReplace
+   * @param codeIfFileNotFound
+   * @return
+   */
   def replaceMerge( filePath : String, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
     replaceMerge(new File(filePath),codeToReplace,codeIfFileNotFound)
   }
+
+  /**
+   * 指定したファイルのreplaceブロック内を置き換える。
+   * @param _file
+   * @param codeToReplace
+   * @param codeIfFileNotFound
+   * @return
+   */
   def replaceMerge( _file : File, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
     val file = RichFile.fromFile(_file)
     var before = ""
@@ -131,6 +152,13 @@ case class Merger(parser : MarkerParser,merger : Injector){
   def holdMerge( filePath : String, generatedCode : String) : String = {
     holdMerge(new File(filePath),generatedCode)
   }
+
+  /**
+   * 指定したファイルのholdブロック内を保持したまま、それ以外を置き換える
+   * @param _file
+   * @param generatedCode
+   * @return
+   */
   def holdMerge( _file : File, generatedCode : String) : String = {
     val file = RichFile.fromFile(_file)
     if(file.exists()){
@@ -138,7 +166,7 @@ case class Merger(parser : MarkerParser,merger : Injector){
       val base = parser.parse(before)
       val toMerge = parser.parse(generatedCode)
       val merged = merger.merge(base,toMerge)
-      if(merged != before) {
+      if(merged.rawString != before) {
         Logger.log("Merge file: " + file.getAbsolutePath)
         file.write(merged.rawString)
         merged.rawString

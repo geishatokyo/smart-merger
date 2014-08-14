@@ -51,11 +51,11 @@ class UsageTest extends FlatSpec with Matchers {
     import com.geishatokyo.smartmerger.dsl.Implicits._
 
     val mergedCode = merger.replaceMerge(copied,InjectionData(
-      "val replaced1 = 39023" to "field",
-      "val replaced2 = 2932" to "field" ifNotContains "replaced2",
-      "def thisIsNotInjected = {}" to "method" ifNotContains "methodAlreadyExists",
-      "def newMethod1 = {}" to "method" ifNotContains "newMethod",
-      "def newMethod2 = {}" to "method"
+      replace("field") to "val replaced1 = 39023",
+      replace("field") to "val replaced2 = 2932" ifNotContains "replaced2",
+      replace("method") to "def thisIsNotInjected = {}" ifNotContains "methodAlreadyExists",
+      replace("method") to "def newMethod1 = {}" ifNotContains "newMethod",
+      replace("method") to "def newMethod2 = {}"
     ),"This code is used instead of file content if passed file doesn't exists.")
 
     println(mergedCode)

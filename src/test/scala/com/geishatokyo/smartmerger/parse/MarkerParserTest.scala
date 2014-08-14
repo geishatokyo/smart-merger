@@ -45,4 +45,23 @@ class MarkerParserTest extends FlatSpec with Matchers {
     assert(parsedData.blocks.size == 7)
 
   }
+
+  "SkipMergeParser" should "parse skip_merge tag" in {
+    val parser = MarkerParser.doubleSlashParser()
+
+    val text =
+      """head
+        |//@skip_merge
+        |
+        |aaa
+      """.stripMargin
+    val parsedData = parser.parse(text)
+
+    println(parsedData.blocks)
+
+    assert(parsedData.blocks.size == 3)
+    assert(parsedData.blocks(1) == SkipMerge("//@skip_merge"))
+
+  }
+
 }

@@ -44,3 +44,7 @@ case class HoldBlock(startTag : String,name : String, endTag : String, text : St
     copy(text = st + System.lineSeparator() + t + System.lineSeparator() + endTag)
   }
 }
+
+case class SkipMerge(startTag : String) extends Block{
+  override def text: String = startTag
+}

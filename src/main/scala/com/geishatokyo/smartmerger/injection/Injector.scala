@@ -15,6 +15,9 @@ object Injector{
 case class Injector(mergeRule : InjectionRule) {
 
   def merge(remainsInsideHold : ParsedData,notRemainsInsideHold : ParsedData) : ParsedData = {
+    if(remainsInsideHold.blocks.exists(_.isInstanceOf[SkipMerge])){
+      return remainsInsideHold
+    }
 
     if(remainsInsideHold.topLevel == TopLevel.Replace){
       throw new Exception(s"Base file top level must be Hold.But was replace")
@@ -53,7 +56,9 @@ case class Injector(mergeRule : InjectionRule) {
   }
 
   def merge(parsedData : ParsedData,mergeData : InjectionData) : ParsedData = {
-
+    if(parsedData.blocks.exists(_.isInstanceOf[SkipMerge])){
+      return parsedData
+    }
     if(parsedData.topLevel == TopLevel.Hold){
       throw new Exception(s"ParsedData top level must be Replace.But was ${parsedData.topLevel}")
     }

@@ -9,10 +9,10 @@ import scala.util.matching.Regex
  */
 object Implicits {
 
-  implicit class InjectionWrapper(code : String){
+  implicit class InjectionWrapper(name : String){
 
-    def to(blockName : String) = {
-      BlockNameAndCode(blockName,code)
+    def to(code : String) = {
+      BlockNameAndCode(name,code)
     }
 
 
@@ -33,8 +33,8 @@ object Implicits {
     ReplaceInjection(Some(b.blockName),b.code)
   }
 
-  def replace(s: String) = {
-    InjectionWrapper(s)
+  def replace(name : String) = {
+    InjectionWrapper(name)
   }
 
 

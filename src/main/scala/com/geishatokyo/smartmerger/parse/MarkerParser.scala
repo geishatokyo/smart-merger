@@ -10,21 +10,34 @@ object MarkerParser{
 
   def apply() : MarkerParser = doubleSlashParser()
 
+  /**
+   * コメントアウトが//のタイプの言語用パーサー
+   * @return
+   */
   def doubleSlashParser() = {
-    new MarkerParser(Replace("//@replace", "//@end") :: Hold("//@hold", "//@end") :: Insert("//@insert") :: Nil)
+    new MarkerParser(Replace("//@replace", "//@end") :: Hold("//@hold", "//@end") :: Insert("//@insert") :: SkipMergeParser("//@skip_merge") :: Nil)
   }
+
+  /**
+   * コメントアウトが#タイプの言語用パーサー
+   * @return
+   */
   def doubleSharpParser() = {
-    new MarkerParser(Replace("##replace", "##end") :: Hold("##hold", "##end") :: Insert("##insert") :: Nil)
+    new MarkerParser(Replace("##replace", "##end") :: Hold("##hold", "##end") :: Insert("##insert") :: SkipMergeParser("##skip_merge") :: Nil)
   }
 
 }
 
+/**
+ * コード中の置換用マーカーのパースを行う。
+ * @param blockParsers
+ */
 class MarkerParser(blockParsers : List[BlockParser[Block]]) {
 
   //var blockParsers: List[BlockParser[Block]] = Replace("##replace", "##end") :: Hold("##hold", "##end") :: Insert("##insert") :: Nil
 
 
-  def parse(file: String) = {
+  def parse(file: String) : ParsedData = {
 
     val matcher = TrieMap[BlockParser[Block]](blockParsers.map(p => p.startTag -> p): _*)
 
@@ -102,7 +115,20 @@ case class Insert(val startTag : String) extends SingleTagBlockParser[InsertPoin
 
 trait BlockParser[+T <: Block] {
 
+  /**
+   * 開始タグ
+   * @return
+   */
   def startTag: String
+
+  /**
+   * 開始タグが見つかった場合に呼ばれる。
+   * ブロックをぱーすして、その結果を返す
+   * @param s ファイルの内容全体
+   * @param fromIndex 開始タグの次の文字の位置
+   * @param context
+   * @return
+   */
   def parse(s : String,fromIndex : Int)(implicit context : Context) : Option[T]
 
 
@@ -148,4 +174,8 @@ trait SingleTagBlockParser[+T <: Block] extends BlockParser[T]{
   def toBlock(name : String,text : String) : T
 }
 
-
+case class SkipMergeParser(startTag : String) extends BlockParser[SkipMerge ]{
+  override def parse(s: String, fromIndex: Int)(implicit context: Context): Option[SkipMerge] = {
+    Some(SkipMerge(startTag))
+  }
+}
