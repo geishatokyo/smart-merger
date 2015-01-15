@@ -229,11 +229,11 @@ trait SingleTagBlockParser[+T <: Block] extends BlockParser[T]{
 
   private val nameRule = AnonymousBlockNameRule
   def parse(reader : StringReader,commentBlock : CommentBlock)(implicit context : Context) : Option[T] = {
-
+    val startIndex = reader.index
     val trueStartTag = commentBlock.start + startTag
     if(!reader.startsWith(trueStartTag)) return None
     reader.next(trueStartTag.length)
-    val indent = getIndent(reader.s,reader.index)
+    val indent = getIndent(reader.s,startIndex)
     getName(reader) match{
       case Some(name) => Some(toBlock(name,"",indent,commentBlock))
       case None => Some(toBlock(nameRule.getName(context.nextBlockId),"",indent,commentBlock))

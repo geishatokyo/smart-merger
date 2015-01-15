@@ -52,9 +52,9 @@ class UsageTest extends FlatSpec with Matchers {
 
     val mergedCode = merger.replaceMerge(copied,
       List(
-        Injection.Always("field", "val replaced1 = 39023"),
-        Injection.NotContain("field", "val replaced2 = 2932","replaced2"),
-        Injection.NotContain("method","def thisIsNotInjected = {}","methodAlreadyExists"),
+        Injection("field", "val replaced1 = 39023"),
+        Injection("field", "val replaced2 = 2932") ifNotContain "replaced2",
+        Injection("method","def thisIsNotInjected = {}") ifNotContain "methodAlreadyExists",
         Injection("method","def newMethod1 = {}") ifNotContain "newMethod",
         Injection("method","def newMethod2 = {}")
     ))

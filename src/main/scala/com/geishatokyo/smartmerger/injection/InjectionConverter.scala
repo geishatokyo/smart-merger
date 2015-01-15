@@ -10,7 +10,7 @@ object InjectionConverter {
   def toInjections(parsedData : ParsedData) : Seq[Injection] = {
     parsedData.blocks.collect({
       case b : BlockWithStartTag => {
-        Injection.Always(b.name,b.text)
+        Injection.Always(b.name,b.text,false)
       }
     })
   }

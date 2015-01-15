@@ -36,12 +36,14 @@ case class Injector(mergeRule : InjectionRule) {
         grouped.get(t.name) match{
           case Some(injections) => {
             val v = injections.filter(_.willMerge(baseFile))
-            val _text = v.map(i => i.text).mkString(System.lineSeparator())
-            val text = if(mergeRule.autoIndent){
-              _text.lines.map(l => (" " * t.indent) + l).mkString(System.lineSeparator())
-            }else{
-              _text
-            }
+            val text = v.map(i => {
+              if(i.autoIndent){
+                i.text.lines.map(l => (" " * t.indent) + l).mkString(System.lineSeparator())
+              }else {
+                i.text
+              }
+            }).mkString(System.lineSeparator())
+
             t.copyWithText(text)
           }
           case None => {

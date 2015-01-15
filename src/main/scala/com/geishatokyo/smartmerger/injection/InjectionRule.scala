@@ -5,8 +5,6 @@ package com.geishatokyo.smartmerger.injection
  */
 class InjectionRule {
 
-  var autoIndent = false
-
   /**
    *
    */

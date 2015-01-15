@@ -9,7 +9,7 @@ import com.geishatokyo.smartmerger.parse.{ParsedData, MarkerParser}
  */
 class InjectorTest extends FlatSpec with Matchers {
 
-  /*"Replace merge" should "merge" in {
+  "Replace merge" should "merge" in {
     val merger = Injector()
 
     val parsedData =  MarkerParser.doubleSlashParser().parse(
@@ -44,7 +44,7 @@ class InjectorTest extends FlatSpec with Matchers {
     )
 
     val result = merger.inject(parsedData,mergeData)
-    println(result.rawString)
+    //println(result.rawString)
 
     assert(result.blocks.size == parsedData.blocks.size)
 
@@ -95,7 +95,7 @@ class InjectorTest extends FlatSpec with Matchers {
     assert(result.blocks(0) == mergeCode.blocks(0))
     assert(result.blocks(1) == baseCode.blocks(1))
 
-  }*/
+  }
   "XML merge" should "merge" in {
 
     val merger = Injector()
@@ -108,7 +108,6 @@ class InjectorTest extends FlatSpec with Matchers {
         |<!--@end-->
         |bbbb
       """.stripMargin)
-    println("#####" + baseCode)
 
     val mergeCode = MarkerParser.xmlParser().parse(
       """
