@@ -27,8 +27,8 @@ class MarkerParserTest extends FlatSpec with Matchers {
 
     val text =
       """head
-        |##replace[withName]
-        |##end
+        |  ##replace[withName]
+        |  ##end
         |hoge
         |##hold
         |here is no name
@@ -43,6 +43,7 @@ class MarkerParserTest extends FlatSpec with Matchers {
     println(parsedData.blocks)
 
     assert(parsedData.blocks.size == 7)
+    assert(parsedData.blocks(1).indent == 2)
 
   }
 

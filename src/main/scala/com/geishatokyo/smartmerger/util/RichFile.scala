@@ -10,11 +10,17 @@ import java.io.{FileOutputStream, FileInputStream, FileNotFoundException, File}
 object RichFile{
 
   implicit def fromFile(file : File) = new RichFile(file)
-  implicit def fromString(file : String) : RichFile = {
-    val f = new File(file)
+
+  /**
+   * Search file from file system and bundle resource.
+   * @param path
+   * @return
+   */
+  implicit def fromPath(path : String) : RichFile = {
+    val f = new File(path)
     if (f.exists()) return new RichFile(f)
 
-    val r = getClass.getClassLoader.getResource(file)
+    val r = getClass.getClassLoader.getResource(path)
     if (r != null){
       val f2 = new File(r.getFile)
       if (f2.exists()){
@@ -22,7 +28,7 @@ object RichFile{
       }
     }
 
-    val r2 = getClass.getResource(file)
+    val r2 = getClass.getResource(path)
     if (r2 != null){
       val f3 = new File(r2.getFile)
       if (f3.exists()){
@@ -83,11 +89,11 @@ class RichFile(file : File) {
 
   }
 
-  def copyFrom( file : String) : File = {
-    copyFrom(RichFile.fromString(file))
+  def copyFrom( path : String) : File = {
+    copyFrom(RichFile.fromPath(path))
   }
 
-  def copyTo(file : String) : File = copyTo(RichFile.fromString(file))
+  def copyTo(path : String) : File = copyTo(RichFile.fromPath(path))
   def copyTo(file : File) : File = {
     val rf = new RichFile(file)
     if (this.asFile.isDirectory) return null

@@ -1,7 +1,7 @@
 package com.geishatokyo.smartmerger.dsl
 
+import com.geishatokyo.smartmerger.injection.Injection
 import com.geishatokyo.smartmerger.parse.ReplaceBlock
-import com.geishatokyo.smartmerger.injection.{ContainsConditionInjection, RegexConditionInjection, ReplaceInjection}
 import scala.util.matching.Regex
 
 /**
@@ -9,46 +9,8 @@ import scala.util.matching.Regex
  */
 object Implicits {
 
-  implicit class InjectionWrapper(name : String){
-
-    def to(code : String) = {
-      BlockNameAndCode(name,code)
-    }
-
-
+  implicit def toInjection( nameAndCode : (String,String)) = {
+    Injection(nameAndCode._1,nameAndCode._2)
   }
-
-  case class BlockNameAndCode(blockName : String, code : String){
-
-    def ifNotContains( str : String) = {
-      ContainsConditionInjection(Some(blockName),str,code)
-    }
-
-    def ifNot(r : Regex) = {
-      RegexConditionInjection(Some(blockName),r,code)
-    }
-
-  }
-  implicit def toInjectionBlock( b: BlockNameAndCode) = {
-    ReplaceInjection(Some(b.blockName),b.code)
-  }
-
-  def replace(name : String) = {
-    InjectionWrapper(name)
-  }
-
-
-  implicit def nameAndCodeToMergeBlock( v : (String,String)) = {
-    ReplaceInjection(Some(v._1),v._2)
-  }
-
-  implicit def codeToMergeBlock( code : String) = {
-    ReplaceInjection(None,code)
-  }
-
-  implicit def nameRegexAndCodeToInsertBlock(v : (String,String,String)) = {
-    RegexConditionInjection(Some(v._1),v._2.r,v._3)
-  }
-
 
 }

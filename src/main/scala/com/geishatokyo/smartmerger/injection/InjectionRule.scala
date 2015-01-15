@@ -5,7 +5,15 @@ package com.geishatokyo.smartmerger.injection
  */
 class InjectionRule {
 
+  var autoIndent = false
+
+  /**
+   *
+   */
   var ignoreNotExistMergeBlock = false
+  /**
+   *
+   */
   var leftNotMergedBlock = true
 
 }

@@ -22,8 +22,8 @@ User.scala
         }
         //@hold[my_impls]
         
-        def userCreatedMethod = {
-          println("I made!")
+        def manuallyMadeMethod = {
+          println("I made it!")
         }
         
         //@end
@@ -49,7 +49,7 @@ User.scala
     }""")
     
     
-結果、User.scalaは次のようにマージされます。
+結果、User.scalaは次のように、上書くファイルがベースになり、上書かれるファイルのholdタグ内のみが残ります。。
 
 User.scala
 
@@ -59,8 +59,8 @@ User.scala
         }
         //@hold[my_impls]
         
-        def userCreatedMethod = {
-          println("I made!")
+        def manuallyMadeMethod = {
+          println("I made it!")
         }
         
         //@end
@@ -97,24 +97,23 @@ User.scala
 
 
     import com.geishatokyo.smartmerger.Merger
-    import com.geishatokyo.smartmerger.injection.InjectionData
-    import com.geishatokyo.smartmerger.dsl.Implicits._
+    import com.geishatokyo.smartmerger.injection.Injection
     import java.io.File
     
     
     val merger = Merger.forScala
-    val injection = InjectionData(
-      replace("method") to """  def generatedMethod() = println("impl!")""",
-      replace("insertMethod") to """  def insertedMethod() = println("inserted")""",
-      replace("insertMethod") to """  def notInserted""" ifNotContains "IMakeAlmostEveryMethod" 
+    val injections = List(
+      Injection("method","""  def generatedMethod() = println("impl!")"""),
+      Injection("insertMethod","""  def insertedMethod() = println("inserted")"""),
+      Injection("insertMethod","""  def notInserted""") ifNotContains "IMakeAlmostEveryMethod"
+    )
     merger.replaceMerge(new File("User.scala"),
-      injection,
-      """... code for default"""
+      injections
     )
     
 結果は以下のようになります。
-notInsertedは、条件として"IMakeAlmostEveryMethod"が含まれない場合のみinsertされることになります。
-この条件は、手動で同名のメソッドを追加した場合に、コードジェネレーションにより再度生成されないようにするために利用できます。
+notInsertedは、条件としてマージ対象ファイル中に"IMakeAlmostEveryMethod"が含まれない場合のみinsertされることになります。
+この機能は、手動で同名のメソッドを追加した場合に、コードジェネレーションにより再度生成されないようにするために利用できます。
 
 
 User.scala
@@ -131,3 +130,23 @@ User.scala
         //@insert[insertMethod]
         def insertedMethod() = println("inserted")
     }
+
+
+## Skip merge
+
+ファイル中に
+
+    //@skip_merge
+
+のタグが含まれる場合、そのファイルはマージ対象になりません。
+自動生成をOffにしたいファイルに記述して下さい。
+
+
+
+# プログラム言語対応
+
+ラインコメントに、ダブルスラッシュ//以外を使う言語中で使う場合は、
+
+   Merger.forXXX
+
+に定義されているMergerを使ってください。

@@ -1,8 +1,8 @@
 package com.geishatokyo.smartmerger
 
-import com.geishatokyo.smartmerger.injection.{InjectionData, InjectionRule, Injector}
+import com.geishatokyo.smartmerger.injection.{Injection, InjectionRule, Injector}
 import com.geishatokyo.smartmerger.parse.{MarkerParser, BlockParser}
-import java.io.File
+import java.io.{FileNotFoundException, File}
 import com.geishatokyo.codegen.util.{Logger, FileUtil}
 
 /**
@@ -100,6 +100,25 @@ object Merger {
     Merger(parser,merger)
   }
 
+  /**
+   * <!--@insert[hoge]-->
+   *
+   * <!--@replace[name]-->
+   * <!--@end-->
+   *
+   * <!--@hold[fuga]-->
+   * <!--@end-->
+   *
+   * タイプのタグを使用
+   * @return
+   */
+  def forXML = {
+    val parser = MarkerParser.xmlParser()
+    val merger = new Injector(mergeRule)
+    Merger(parser,merger)
+
+  }
+
 }
 
 /**
@@ -112,34 +131,67 @@ case class Merger(parser : MarkerParser,merger : Injector){
   import com.geishatokyo.codegen.util.RichFile
 
   /**
+   * 2つのファイルをマージする
+   * @param baseFilePath
+   * @param mergeFilePath
+   * @return
+   */
+  def merge(baseFilePath : String,mergeFilePath : String) : String = {
+    val base = RichFile.fromPath(baseFilePath)
+    val merge = RichFile.fromPath(mergeFilePath)
+    if(!base.exists()){
+      merge.copyTo(base)
+      return merge.readAsString()
+    }
+    if(!merge.exists){
+      throw new Exception(s"Merge file:${base.getAbsolutePath} not found")
+    }
+
+    val baseData = parser.parse(base.readAsString())
+    val mergeData = parser.parse(merge.readAsString())
+
+    val merged = baseData.topLevel match{
+      case TopLevel.Hold => {
+        merger.inject(mergeData,baseData)
+      }
+      case TopLevel.Replace => {
+        merger.inject(baseData,mergeData)
+      }
+      case TopLevel.None => {
+        merge.copyTo(base)
+        mergeData
+      }
+    }
+
+    merged.rawString
+  }
+
+  /**
    * 指定したファイルのreplaceブロック内を置き換える。
    * @param filePath
    * @param codeToReplace
-   * @param codeIfFileNotFound
    * @return
    */
-  def replaceMerge( filePath : String, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
-    replaceMerge(new File(filePath),codeToReplace,codeIfFileNotFound)
+  def replaceMerge( filePath : String, codeToReplace :  List[Injection]) : String = {
+    replaceMerge(new File(filePath),codeToReplace)
   }
 
   /**
    * 指定したファイルのreplaceブロック内を置き換える。
    * @param _file
    * @param codeToReplace
-   * @param codeIfFileNotFound
    * @return
    */
-  def replaceMerge( _file : File, codeToReplace : InjectionData,codeIfFileNotFound : String) : String = {
+  def replaceMerge( _file : File, codeToReplace : List[Injection]) : String = {
     val file = RichFile.fromFile(_file)
     var before = ""
     val parsedData = if(file.exists()){
       before = file.readAsString()
       parser.parse(before)
     }else{
-      Logger.log("Create new file: " + file.getAbsolutePath)
-      parser.parse(codeIfFileNotFound)
+      throw new FileNotFoundException(s"Target file:${_file.getAbsoluteFile} not found")
     }
-    val s =merger.merge(parsedData,codeToReplace).rawString
+    val s =merger.inject(parsedData,codeToReplace).rawString
     if(s != before) {
       Logger.log("Merge file: " + file.getAbsolutePath)
       file.write(s)
@@ -149,6 +201,8 @@ case class Merger(parser : MarkerParser,merger : Injector){
       s
     }
   }
+
+
   def holdMerge( filePath : String, generatedCode : String) : String = {
     holdMerge(new File(filePath),generatedCode)
   }
@@ -165,7 +219,7 @@ case class Merger(parser : MarkerParser,merger : Injector){
       val before = file.readAsString()
       val base = parser.parse(before)
       val toMerge = parser.parse(generatedCode)
-      val merged = merger.merge(base,toMerge)
+      val merged = merger.inject(toMerge,base)
       if(merged.rawString != before) {
         Logger.log("Merge file: " + file.getAbsolutePath)
         file.write(merged.rawString)

@@ -26,6 +26,9 @@ object MarkerParser{
     new MarkerParser(Replace("##replace", "##end") :: Hold("##hold", "##end") :: Insert("##insert") :: SkipMergeParser("##skip_merge") :: Nil)
   }
 
+  def xmlParser() = {
+    new MarkerParser(Replace("<!--@replace-->", "<!--@end-->") :: Hold("<!--@hold-->", "<!--@end-->") :: Insert("<!--@insert-->") :: SkipMergeParser("<!--@skip_merge-->") :: Nil)
+  }
 }
 
 /**
@@ -53,13 +56,13 @@ class MarkerParser(blockParsers : List[BlockParser[Block]]) {
       matcher.getLongest(file.substring(index, index + maxStartTagLength)) match {
         case Some(parser) => {
           parser.parse(file, index) match {
-            case Some(block) => {
+            case Some( (block,parsedCharLength)) => {
               if (buffer.size > 0) {
                 blocks = TextBlock(buffer.toString) :: blocks
                 buffer.clear()
               }
               blocks = block :: blocks
-              index += block.text.length
+              index += parsedCharLength
             }
             case None => {
               buffer.append(file.charAt(index))
@@ -96,19 +99,19 @@ class Context {
 
 
 case class Replace(val startTag : String,val endTag : String) extends PairTagBlockParser[ReplaceBlock]{
-  override def toBlock(name: String, text: String): ReplaceBlock = {
-    ReplaceBlock(startTag, name,endTag,text)
+  override def toBlock(name: String, text: String, indent : Int): ReplaceBlock = {
+    ReplaceBlock(startTag, name,endTag,text,indent)
   }
 }
 
 case class Hold(val startTag : String,val endTag : String) extends PairTagBlockParser[HoldBlock]{
-  override def toBlock(name: String, text: String): HoldBlock = {
-    HoldBlock(startTag, name,endTag,text)
+  override def toBlock(name: String, text: String, indent : Int): HoldBlock = {
+    HoldBlock(startTag, name,endTag,text,indent)
   }
 }
 case class Insert(val startTag : String) extends SingleTagBlockParser[InsertPoint]{
-  override def toBlock(name: String, text: String)  = {
-    InsertPoint(startTag,name,text)
+  override def toBlock(name: String, text: String, indent : Int) : InsertPoint  = {
+    InsertPoint(startTag,name,text,indent)
   }
 }
 
@@ -127,9 +130,9 @@ trait BlockParser[+T <: Block] {
    * @param s ファイルの内容全体
    * @param fromIndex 開始タグの次の文字の位置
    * @param context
-   * @return
+   * @return parsedBlock and parse character length
    */
-  def parse(s : String,fromIndex : Int)(implicit context : Context) : Option[T]
+  def parse(s : String,fromIndex : Int)(implicit context : Context) : Option[(T,Int)]
 
 
   lazy val nameRegex = (Regex.quote(startTag) + """\[([\S^\]]+)\]""").r
@@ -140,6 +143,16 @@ trait BlockParser[+T <: Block] {
       }
       case None => None
     }
+  }
+
+  def getIndent(s : String,fromIndex : Int) : Int = {
+    for(i <- (fromIndex - 1) to 0 by -1){
+      val c = s.charAt(i)
+      if(c == '\n' || c == '\r'){
+        return fromIndex - i - 1
+      }
+    }
+    fromIndex
   }
 
 }
@@ -153,29 +166,35 @@ trait PairTagBlockParser[+T <: Block] extends BlockParser[T]{
     val i = s.indexOf(endTag,fromIndex)
     if(i < 0) None
     else{
-      val name = getName(s.substring(fromIndex,(fromIndex + 50).min(s.length))).getOrElse(nameRule.getName( context.nextBlockId))
-      Some(toBlock(name,s.substring(fromIndex,i + endTag.length)))
+
+      val indent = getIndent(s,fromIndex)
+
+      val _name = getName(s.substring(fromIndex,(fromIndex + 50).min(s.length)))
+      val name = _name.getOrElse(nameRule.getName( context.nextBlockId))
+      val offset = startTag.length + _name.map(_.length + 2).getOrElse(0)
+      Some( (toBlock(name,s.substring(fromIndex + offset,i),indent),i - fromIndex + endTag.length) )
     }
   }
 
-  def toBlock(name : String,text : String) : T
+  def toBlock(name : String,text : String, indent : Int) : T
 }
 
 trait SingleTagBlockParser[+T <: Block] extends BlockParser[T]{
 
   private val nameRule = AnonymousBlockNameRule
   def parse(s : String,fromIndex : Int)(implicit context : Context) = {
+    val indent = getIndent(s,fromIndex)
     getName(s.substring(fromIndex)) match{
-      case Some(name) => Some(toBlock(name,s.substring(fromIndex,fromIndex + startTag.length + name.length + 2)))
-      case None => Some(toBlock(nameRule.getName(context.nextBlockId),s.substring(fromIndex,fromIndex + startTag.length)))
+      case Some(name) => Some(toBlock(name,"",indent) -> (startTag.length + name.length + 2))
+      case None => Some(toBlock(nameRule.getName(context.nextBlockId),"",indent) -> startTag.length )
     }
   }
 
-  def toBlock(name : String,text : String) : T
+  def toBlock(name : String,text : String,indent : Int) : T
 }
 
 case class SkipMergeParser(startTag : String) extends BlockParser[SkipMerge ]{
-  override def parse(s: String, fromIndex: Int)(implicit context: Context): Option[SkipMerge] = {
-    Some(SkipMerge(startTag))
+  override def parse(s: String, fromIndex: Int)(implicit context: Context) = {
+    Some(SkipMerge(startTag) -> startTag.length)
   }
 }

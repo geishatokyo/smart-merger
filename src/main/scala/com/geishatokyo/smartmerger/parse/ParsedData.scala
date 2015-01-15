@@ -36,7 +36,7 @@ case class ParsedData(blocks : Block*) {
     }
   }
 
-  lazy val rawString = blocks.map(_.text).mkString
+  lazy val rawString = blocks.map(_.fullText).mkString
 
 
 }

@@ -1,9 +1,9 @@
 package com.geishatokyo.smartmerger
 
+import com.geishatokyo.smartmerger.injection.Injection
 import org.scalatest.{Matchers, FlatSpec}
 import com.geishatokyo.codegen.util.RichFile._
 import com.geishatokyo.codegen.util.RichFile
-import com.geishatokyo.smartmerger.injection.{ReplaceInjection, InjectionData}
 
 /**
  * Created by takeshita on 2014/06/17.
@@ -12,7 +12,7 @@ class UsageTest extends FlatSpec with Matchers {
 
   "holdMerge" should "be used as such" in {
 
-    val f = RichFile.fromString("src/test/resources/UsageSampleForHoldMerge.scala")
+    val f = RichFile.fromPath("src/test/resources/UsageSampleForHoldMerge.scala")
     val copied = f.copyTo("target/temp/sample1.scala")
 
     val newCode =
@@ -42,7 +42,7 @@ class UsageTest extends FlatSpec with Matchers {
     assert(mergedFileContent == mergedCode)
   }
   "replaceMerge" should "be used as such" in {
-    val f = RichFile.fromString("src/test/resources/UsageSampleForReplaceMerge.scala")
+    val f = RichFile.fromPath("src/test/resources/UsageSampleForReplaceMerge.scala")
     val copied = f.copyTo("target/temp/sample2.scala")
 
 
@@ -50,13 +50,14 @@ class UsageTest extends FlatSpec with Matchers {
 
     import com.geishatokyo.smartmerger.dsl.Implicits._
 
-    val mergedCode = merger.replaceMerge(copied,InjectionData(
-      replace("field") to "val replaced1 = 39023",
-      replace("field") to "val replaced2 = 2932" ifNotContains "replaced2",
-      replace("method") to "def thisIsNotInjected = {}" ifNotContains "methodAlreadyExists",
-      replace("method") to "def newMethod1 = {}" ifNotContains "newMethod",
-      replace("method") to "def newMethod2 = {}"
-    ),"This code is used instead of file content if passed file doesn't exists.")
+    val mergedCode = merger.replaceMerge(copied,
+      List(
+        Injection.Always("field", "val replaced1 = 39023"),
+        Injection.NotContain("field", "val replaced2 = 2932","replaced2"),
+        Injection.NotContain("method","def thisIsNotInjected = {}","methodAlreadyExists"),
+        Injection("method","def newMethod1 = {}") ifNotContain "newMethod",
+        Injection("method","def newMethod2 = {}")
+    ))
 
     println(mergedCode)
     val mergedFileContent = copied.readAsString()
