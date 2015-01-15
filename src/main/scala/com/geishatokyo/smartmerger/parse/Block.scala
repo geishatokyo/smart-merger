@@ -1,5 +1,7 @@
 package com.geishatokyo.smartmerger.parse
 
+import com.geishatokyo.smartmerger.Env
+
 /**
  * Created by takeshita on 2014/06/03.
  */
@@ -17,11 +19,11 @@ trait Block{
     if(t.length == 0) return ""
     val end = if(t.endsWith("\n") || t.endsWith("\r") ){
       ""
-    }else System.lineSeparator() + " " * indent
+    }else Env.lineSeparator + " " * indent
 
     val firstLine = t.lines.next()
     if(firstLine.trim.length != 0){
-      System.lineSeparator() + t + end
+      Env.lineSeparator + t + end
     }else{
       t + end
     }

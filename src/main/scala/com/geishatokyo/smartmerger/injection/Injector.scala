@@ -1,7 +1,7 @@
 package com.geishatokyo.smartmerger.injection
 
 import com.geishatokyo.smartmerger.parse._
-import com.geishatokyo.smartmerger.TopLevel
+import com.geishatokyo.smartmerger.{Env, TopLevel}
 
 /**
  * Created by takeshita on 2014/06/03.
@@ -38,11 +38,11 @@ case class Injector(mergeRule : InjectionRule) {
             val v = injections.filter(_.willMerge(baseFile))
             val text = v.map(i => {
               if(i.autoIndent){
-                i.text.lines.map(l => (" " * t.indent) + l).mkString(System.lineSeparator())
+                i.text.lines.map(l => (" " * t.indent) + l).mkString(Env.lineSeparator)
               }else {
                 i.text
               }
-            }).mkString(System.lineSeparator())
+            }).mkString(Env.lineSeparator)
 
             t.copyWithText(text)
           }
