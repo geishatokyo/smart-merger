@@ -15,7 +15,9 @@ object MarkerParser{
    * @return
    */
   def doubleSlashParser() = {
-    new MarkerParser(Replace("//@replace", "//@end") :: Hold("//@hold", "//@end") :: Insert("//@insert") :: SkipMergeParser("//@skip_merge") :: Nil)
+    new MarkerParser(
+      CommentBlock("//",None) :: Nil,
+      Replace("@replace", "@end") :: Hold("@hold", "@end") :: Insert("@insert") :: SkipMergeParser("@skip_merge") :: Nil)
   }
 
   /**
@@ -23,19 +25,27 @@ object MarkerParser{
    * @return
    */
   def doubleSharpParser() = {
-    new MarkerParser(Replace("##replace", "##end") :: Hold("##hold", "##end") :: Insert("##insert") :: SkipMergeParser("##skip_merge") :: Nil)
+    new MarkerParser(
+      CommentBlock("##",None) :: Nil,
+      Replace("replace", "end") :: Hold("hold", "end") :: Insert("insert") :: SkipMergeParser("skip_merge") :: Nil)
   }
 
   def xmlParser() = {
-    new MarkerParser(Replace("<!--@replace-->", "<!--@end-->") :: Hold("<!--@hold-->", "<!--@end-->") :: Insert("<!--@insert-->") :: SkipMergeParser("<!--@skip_merge-->") :: Nil)
+    new MarkerParser(
+      CommentBlock("<!--",Some("-->")) :: Nil,
+      Replace("@replace", "@end") :: Hold("@hold", "@end") :: Insert("@insert") :: SkipMergeParser("@skip_merge") :: Nil)
   }
 }
 
+case class CommentBlock(start : String,end : Option[String]){
+
+  def envelop(s : String) = start + s + end.getOrElse("")
+}
 /**
  * コード中の置換用マーカーのパースを行う。
  * @param blockParsers
  */
-class MarkerParser(blockParsers : List[BlockParser[Block]]) {
+class MarkerParser(comments : List[CommentBlock],blockParsers : List[BlockParser[Block]]) {
 
   //var blockParsers: List[BlockParser[Block]] = Replace("##replace", "##end") :: Hold("##hold", "##end") :: Insert("##insert") :: Nil
 
@@ -50,36 +60,36 @@ class MarkerParser(blockParsers : List[BlockParser[Block]]) {
     val buffer = new StringBuilder(file.length)
 
     var blocks: List[Block] = Nil
-    var index = 0
-    val end = file.length - maxStartTagLength
-    while (index < end) {
-      matcher.getLongest(file.substring(index, index + maxStartTagLength)) match {
-        case Some(parser) => {
-          parser.parse(file, index) match {
-            case Some( (block,parsedCharLength)) => {
-              if (buffer.size > 0) {
-                blocks = TextBlock(buffer.toString) :: blocks
+    val reader = new StringReader(file)
+
+    while(!reader.isEnd){
+      val old = reader.index
+
+
+      comments.find(c => reader.startsWith(c.start)) match{
+        case Some(c) => {
+          blockParsers.view.map(parser => parser.parse(reader,c)).find(_.isDefined).flatten match{
+            case Some(block) => {
+              if(buffer.length > 0){
+                blocks = TextBlock(buffer.toString()) :: blocks
                 buffer.clear()
               }
               blocks = block :: blocks
-              index += parsedCharLength
             }
             case None => {
-              buffer.append(file.charAt(index))
-              index += 1
+              reader.index = old
+              buffer.append(reader.current)
+              reader.next(1)
             }
           }
         }
         case None => {
-          buffer.append(file.charAt(index))
-          index += 1
+          buffer.append(reader.current)
+          reader.next(1)
         }
       }
+    }
 
-    }
-    if (index < file.size) {
-      buffer.append(file.substring(index))
-    }
     if (buffer.size > 0) {
       blocks = TextBlock(buffer.toString) :: blocks
     }
@@ -87,6 +97,44 @@ class MarkerParser(blockParsers : List[BlockParser[Block]]) {
     ParsedData(blocks.reverse :_*)
 
   }
+
+
+}
+class StringReader(val s : String){
+  var index = 0
+  def take(n : Int) = {
+    s.substring(index,(index + n).min(s.length))
+  }
+  def next(step : Int) = index += step
+
+  def startsWith(s : String) = {
+    if(length < s.length) false
+    else take(s.length) == s
+  }
+
+  def isEnd = index >= s.length
+  def length = s.length - index
+
+  val whitespaces = " \n\r\t"
+
+  def skipWhiteSpaces() = {
+    while(index < s.length && whitespaces.contains(s.charAt(index))){
+      index += 1
+    }
+  }
+  def current = s.charAt(index)
+
+  def indexOf(v : String) = s.indexOf(v,index)
+
+  def readUntil(end : String) = {
+    val i = indexOf(end)
+    if(i > 0){
+      val v = s.substring(index,i)
+      index = i + end.length
+      Some(v)
+    }else None
+  }
+
 }
 class Context {
   var anonymousBlockCount = 0
@@ -98,22 +146,6 @@ class Context {
 }
 
 
-case class Replace(val startTag : String,val endTag : String) extends PairTagBlockParser[ReplaceBlock]{
-  override def toBlock(name: String, text: String, indent : Int): ReplaceBlock = {
-    ReplaceBlock(startTag, name,endTag,text,indent)
-  }
-}
-
-case class Hold(val startTag : String,val endTag : String) extends PairTagBlockParser[HoldBlock]{
-  override def toBlock(name: String, text: String, indent : Int): HoldBlock = {
-    HoldBlock(startTag, name,endTag,text,indent)
-  }
-}
-case class Insert(val startTag : String) extends SingleTagBlockParser[InsertPoint]{
-  override def toBlock(name: String, text: String, indent : Int) : InsertPoint  = {
-    InsertPoint(startTag,name,text,indent)
-  }
-}
 
 
 trait BlockParser[+T <: Block] {
@@ -127,21 +159,24 @@ trait BlockParser[+T <: Block] {
   /**
    * 開始タグが見つかった場合に呼ばれる。
    * ブロックをぱーすして、その結果を返す
-   * @param s ファイルの内容全体
-   * @param fromIndex 開始タグの次の文字の位置
+   * @param reader
    * @param context
    * @return parsedBlock and parse character length
    */
-  def parse(s : String,fromIndex : Int)(implicit context : Context) : Option[(T,Int)]
+  def parse(reader : StringReader,commentBlock : CommentBlock)(implicit context : Context) : Option[T]
 
 
   lazy val nameRegex = (Regex.quote(startTag) + """\[([\S^\]]+)\]""").r
-  protected def getName(line : String) : Option[String] = {
-    nameRegex.findPrefixMatchOf(line) match{
-      case Some(m) => {
-        Some(m.group(1))
-      }
-      case None => None
+  protected def getName(reader : StringReader) : Option[String] = {
+    val old = reader.index
+    reader.skipWhiteSpaces()
+    if(reader.current == '['){
+      reader.next(1)
+      val name = reader.readUntil("]")
+      name.map(_.trim)
+    }else {
+      reader.index = old
+      None
     }
   }
 
@@ -161,40 +196,75 @@ trait PairTagBlockParser[+T <: Block] extends BlockParser[T]{
 
   private val nameRule = AnonymousBlockNameRule
 
-  def parse(s : String,fromIndex : Int)(implicit context : Context) = {
+  def parse(reader : StringReader,commentBlock : CommentBlock)(implicit context : Context) : Option[T] = {
+    val startIndex = reader.index
 
-    val i = s.indexOf(endTag,fromIndex)
-    if(i < 0) None
-    else{
+    val trueStartTag = commentBlock.start + startTag
+    val trueEndTag = commentBlock.envelop(endTag)
+    if(!reader.startsWith(trueStartTag)) return None
+    reader.next(trueStartTag.length)
+    val i = reader.indexOf(trueEndTag)
+    if(i < 0) {
+      None
+    }else{
+      val indent = getIndent(reader.s,startIndex)
 
-      val indent = getIndent(s,fromIndex)
-
-      val _name = getName(s.substring(fromIndex,(fromIndex + 50).min(s.length)))
+      val _name = getName(reader)
       val name = _name.getOrElse(nameRule.getName( context.nextBlockId))
-      val offset = startTag.length + _name.map(_.length + 2).getOrElse(0)
-      Some( (toBlock(name,s.substring(fromIndex + offset,i),indent),i - fromIndex + endTag.length) )
+      val body = if(commentBlock.end.isDefined){
+        reader.next(commentBlock.end.get.length)
+        reader.readUntil(trueEndTag)
+      }else{
+        reader.readUntil(trueEndTag)
+      }
+
+      Some( toBlock(name,body.getOrElse(""),indent,commentBlock) )
     }
   }
 
-  def toBlock(name : String,text : String, indent : Int) : T
+  def toBlock(name : String,text : String, indent : Int,commentBlock: CommentBlock) : T
 }
 
 trait SingleTagBlockParser[+T <: Block] extends BlockParser[T]{
 
   private val nameRule = AnonymousBlockNameRule
-  def parse(s : String,fromIndex : Int)(implicit context : Context) = {
-    val indent = getIndent(s,fromIndex)
-    getName(s.substring(fromIndex)) match{
-      case Some(name) => Some(toBlock(name,"",indent) -> (startTag.length + name.length + 2))
-      case None => Some(toBlock(nameRule.getName(context.nextBlockId),"",indent) -> startTag.length )
+  def parse(reader : StringReader,commentBlock : CommentBlock)(implicit context : Context) : Option[T] = {
+
+    val trueStartTag = commentBlock.start + startTag
+    if(!reader.startsWith(trueStartTag)) return None
+    reader.next(trueStartTag.length)
+    val indent = getIndent(reader.s,reader.index)
+    getName(reader) match{
+      case Some(name) => Some(toBlock(name,"",indent,commentBlock))
+      case None => Some(toBlock(nameRule.getName(context.nextBlockId),"",indent,commentBlock))
     }
   }
 
-  def toBlock(name : String,text : String,indent : Int) : T
+  def toBlock(name : String,text : String,indent : Int,commentBlock : CommentBlock) : T
 }
 
+case class Replace(val startTag : String,val endTag : String) extends PairTagBlockParser[ReplaceBlock]{
+  override def toBlock(name: String, text: String, indent : Int,commentBlock: CommentBlock): ReplaceBlock = {
+    ReplaceBlock(startTag, name,endTag,text,indent,commentBlock)
+  }
+}
+
+case class Hold(val startTag : String,val endTag : String) extends PairTagBlockParser[HoldBlock]{
+  override def toBlock(name: String, text: String, indent : Int,commentBlock: CommentBlock): HoldBlock = {
+    HoldBlock(startTag, name,endTag,text,indent,commentBlock)
+  }
+}
+case class Insert(val startTag : String) extends SingleTagBlockParser[InsertPoint]{
+  override def toBlock(name: String, text: String, indent : Int,commentBlock: CommentBlock) : InsertPoint  = {
+    InsertPoint(startTag,name,text,indent,commentBlock)
+  }
+}
 case class SkipMergeParser(startTag : String) extends BlockParser[SkipMerge ]{
-  override def parse(s: String, fromIndex: Int)(implicit context: Context) = {
-    Some(SkipMerge(startTag) -> startTag.length)
+  override def parse(reader : StringReader,commentBlock : CommentBlock)(implicit context: Context) : Option[SkipMerge] = {
+
+    val trueStartTag = commentBlock.start + startTag
+    if(!reader.startsWith(trueStartTag)) return None
+    reader.next(trueStartTag.length)
+    Some(SkipMerge(startTag,commentBlock))
   }
 }

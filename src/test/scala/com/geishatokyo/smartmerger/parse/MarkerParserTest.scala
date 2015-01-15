@@ -7,6 +7,18 @@ import org.scalatest._
  */
 class MarkerParserTest extends FlatSpec with Matchers {
 
+  "StringReader" should "readString" in {
+
+    val reader = new StringReader("abcde fghij klmno")
+    assert(reader.current == 'a')
+    reader.next(2)
+    assert(reader.current == 'c')
+    assert(reader.readUntil("e f") == Some("cd"))
+    assert(reader.current == 'g')
+    assert(reader.take(2) == "gh")
+
+  }
+
   "MarkerParser" should "parse no marker text" in {
 
     val parser = MarkerParser.doubleSharpParser()
@@ -48,6 +60,8 @@ class MarkerParserTest extends FlatSpec with Matchers {
   }
 
   "SkipMergeParser" should "parse skip_merge tag" in {
+
+
     val parser = MarkerParser.doubleSlashParser()
 
     val text =
@@ -61,7 +75,7 @@ class MarkerParserTest extends FlatSpec with Matchers {
     println(parsedData.blocks)
 
     assert(parsedData.blocks.size == 3)
-    assert(parsedData.blocks(1) == SkipMerge("//@skip_merge"))
+    assert(parsedData.blocks(1) == SkipMerge("@skip_merge",CommentBlock("//",None)))
 
   }
 

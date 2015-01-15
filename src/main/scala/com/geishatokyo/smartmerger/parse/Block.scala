@@ -12,6 +12,20 @@ trait Block{
   def copyWithText(text : String) : Block
   def indent : Int
 
+
+  protected def addLineSeparator(t : String) : String = {
+    if(t.length == 0) return ""
+    val end = if(t.endsWith("\n") || t.endsWith("\r") ){
+      ""
+    }else System.lineSeparator() + " " * indent
+
+    val firstLine = t.lines.next()
+    if(firstLine.trim.length != 0){
+      System.lineSeparator() + t + end
+    }else{
+      t + end
+    }
+  }
 }
 trait BlockWithStartTag extends Block{
   def startTag : String
@@ -28,7 +42,7 @@ case class TextBlock(text : String) extends Block{
 
   override def fullText: String = text
 }
-case class InsertPoint(startTag : String,name : String,text : String,indent : Int) extends BlockWithStartTag{
+case class InsertPoint(startTag : String,name : String,text : String,indent : Int,commentBlock : CommentBlock) extends BlockWithStartTag{
 
 
   def copyWithText(t : String) = {
@@ -36,30 +50,30 @@ case class InsertPoint(startTag : String,name : String,text : String,indent : In
   }
 
   override def fullText: String = {
-    text + System.lineSeparator() + (" " * indent)
+    commentBlock.envelop(startTag) + addLineSeparator(text)
   }
 }
-case class ReplaceBlock(startTag : String,name : String,endTag : String,text : String,indent : Int) extends BlockWithEndTag{
+case class ReplaceBlock(startTag : String,name : String,endTag : String,text : String,indent : Int,commentBlock : CommentBlock) extends BlockWithEndTag{
 
   def copyWithText(t : String) = {
     copy(text = t)
   }
 
   override def fullText: String = {
-    startTag + text + System.lineSeparator() + (" " * indent)
+    commentBlock.envelop(startTag) + addLineSeparator(text) + commentBlock.envelop(endTag)
   }
 }
-case class HoldBlock(startTag : String,name : String, endTag : String, text : String,indent : Int) extends BlockWithEndTag{
+case class HoldBlock(startTag : String,name : String, endTag : String, text : String,indent : Int,commentBlock : CommentBlock) extends BlockWithEndTag{
 
   def copyWithText(t : String) = {
     copy(text = t)
   }
   override def fullText: String = {
-    startTag + text + System.lineSeparator() + (" " * indent)
+    commentBlock.envelop(startTag) + addLineSeparator(text) + commentBlock.envelop(endTag)
   }
 }
 
-case class SkipMerge(startTag : String) extends Block{
+case class SkipMerge(startTag : String,commentBlock : CommentBlock) extends Block{
   override def text: String = startTag
 
   def copyWithText(t : String) = {
@@ -68,6 +82,6 @@ case class SkipMerge(startTag : String) extends Block{
   def indent = 0
 
   override def fullText: String = {
-    startTag
+    commentBlock.envelop( startTag)
   }
 }

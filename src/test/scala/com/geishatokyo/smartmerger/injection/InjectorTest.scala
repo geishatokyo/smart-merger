@@ -1,15 +1,15 @@
 package com.geishatokyo.smartmerger.injection
 
-import org.scalatest.FlatSpec
+import org.scalatest.{Matchers, FlatSpec}
 import org.scalatest.matchers.ShouldMatchers
 import com.geishatokyo.smartmerger.parse.{ParsedData, MarkerParser}
 
 /**
  * Created by takeshita on 2014/06/04.
  */
-class InjectorTest extends FlatSpec with ShouldMatchers {
+class InjectorTest extends FlatSpec with Matchers {
 
-  "Replace merge" should "merge" in {
+  /*"Replace merge" should "merge" in {
     val merger = Injector()
 
     val parsedData =  MarkerParser.doubleSlashParser().parse(
@@ -95,6 +95,37 @@ class InjectorTest extends FlatSpec with ShouldMatchers {
     assert(result.blocks(0) == mergeCode.blocks(0))
     assert(result.blocks(1) == baseCode.blocks(1))
 
-  }
+  }*/
+  "XML merge" should "merge" in {
 
+    val merger = Injector()
+
+    val baseCode = MarkerParser.xmlParser().parse(
+      """
+        |bbbb
+        |<!--@hold-->
+        |This is left.
+        |<!--@end-->
+        |bbbb
+      """.stripMargin)
+    println("#####" + baseCode)
+
+    val mergeCode = MarkerParser.xmlParser().parse(
+      """
+        |aaaa
+        |<!--@hold-->
+        |This is not merge.
+        |<!--@end-->
+        |aaaa
+      """.stripMargin
+    )
+
+    val result = merger.inject(mergeCode,baseCode)
+
+    println(result.rawString)
+    assert(result.blocks.size == baseCode.blocks.size)
+    assert(result.blocks(0) == mergeCode.blocks(0))
+    assert(result.blocks(1) == baseCode.blocks(1))
+    assert(result.blocks(2) == mergeCode.blocks(2))
+  }
 }
