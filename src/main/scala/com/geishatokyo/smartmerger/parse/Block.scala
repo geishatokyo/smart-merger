@@ -52,7 +52,7 @@ case class InsertPoint(startTag : String,name : String,text : String,indent : In
   }
 
   override def fullText: String = {
-    commentBlock.envelop(startTag) + addLineSeparator(text)
+    commentBlock.envelop(s"${startTag}[${name}]") + addLineSeparator(text)
   }
 }
 case class ReplaceBlock(startTag : String,name : String,endTag : String,text : String,indent : Int,commentBlock : CommentBlock) extends BlockWithEndTag{
@@ -62,7 +62,7 @@ case class ReplaceBlock(startTag : String,name : String,endTag : String,text : S
   }
 
   override def fullText: String = {
-    commentBlock.envelop(startTag) + addLineSeparator(text) + commentBlock.envelop(endTag)
+    commentBlock.envelop(s"${startTag}[${name}]") + addLineSeparator(text) + commentBlock.envelop(endTag)
   }
 }
 case class HoldBlock(startTag : String,name : String, endTag : String, text : String,indent : Int,commentBlock : CommentBlock) extends BlockWithEndTag{
@@ -71,7 +71,7 @@ case class HoldBlock(startTag : String,name : String, endTag : String, text : St
     copy(text = t)
   }
   override def fullText: String = {
-    commentBlock.envelop(startTag) + addLineSeparator(text) + commentBlock.envelop(endTag)
+    commentBlock.envelop(s"${startTag}[${name}]") + addLineSeparator(text) + commentBlock.envelop(endTag)
   }
 }
 
