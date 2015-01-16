@@ -40,6 +40,16 @@ object Injection{
   case class NotContain(name : String,text : String,autoIndent : Boolean,checkToContains : String) extends Not(Contain(name,text,autoIndent,checkToContains))
   case class NotMatch(name : String,text : String,autoIndent : Boolean, checkToMatch : Regex) extends Not(Match(name,text,autoIndent,checkToMatch))
 
+  case class WithExtractor(name : String,text : String, autoIndent : Boolean,extractor : CheckStringExtractor) extends Injection{
+
+    override def willMerge(parsedData: ParsedData): Boolean = {
+      extractor.getCheckString(text) match{
+        case Some(checkString) if extractor.not => !parsedData.rawString.contains(checkString)
+        case Some(checkString) => parsedData.rawString.contains(checkString)
+        case None => true
+      }
+    }
+  }
 
   def apply(name : String,text : String) : Injection = {
     Always(name,text,true)
@@ -51,6 +61,7 @@ object Injection{
     def ifNotMatch(checkToMatch : Regex) = NotMatch(a.name,a.text,a.autoIndent,checkToMatch)
     def ifContain(checkToContain : String) = Contain(a.name,a.text,a.autoIndent,checkToContain)
     def ifMatch(checkToMatch : Regex) = Match(a.name,a.text,a.autoIndent,checkToMatch)
+    def autoCheck(implicit extractor : CheckStringExtractor) = WithExtractor(a.name,a.text,a.autoIndent,extractor)
   }
 
 
