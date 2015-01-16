@@ -191,13 +191,16 @@ case class Merger(parser : MarkerParser,merger : Injector){
     }else{
       throw new FileNotFoundException(s"Target file:${_file.getAbsoluteFile} not found")
     }
+    if(parsedData.topLevel == TopLevel.Hold){
+      throw new Exception(s"Top level of ${file.getName} is not replace")
+    }
     val s =merger.inject(parsedData,codeToReplace).rawString
     if(s != before) {
-      Logger.log("Merge file: " + file.getAbsolutePath)
+      Logger.change("Merge file: " + file.getAbsolutePath)
       file.write(s)
       s
     }else{
-      Logger.log("File:" + file.getAbsolutePath + " is not changed")
+      Logger.notChange("File:" + file.getAbsolutePath + " is not changed")
       s
     }
   }
@@ -219,17 +222,22 @@ case class Merger(parser : MarkerParser,merger : Injector){
       val before = file.readAsString()
       val base = parser.parse(before)
       val toMerge = parser.parse(generatedCode)
+
+      if(base.topLevel == TopLevel.Replace){
+        throw new Exception(s"Top level of ${file.getName} is not hold")
+      }
       val merged = merger.inject(toMerge,base)
+
       if(merged.rawString != before) {
-        Logger.log("Merge file: " + file.getAbsolutePath)
+        Logger.change("Merge file: " + file.getAbsolutePath)
         file.write(merged.rawString)
         merged.rawString
       }else{
-        Logger.log("File:" + file.getAbsolutePath + " is not changed")
+        Logger.notChange("File:" + file.getAbsolutePath + " is not changed")
         before
       }
     }else{
-      Logger.log("Create new file: " + file.getAbsolutePath)
+      Logger.change("Create new file: " + file.getAbsolutePath)
       file.write(generatedCode)
       generatedCode
     }
