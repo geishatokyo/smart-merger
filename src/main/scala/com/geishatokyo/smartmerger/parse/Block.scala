@@ -16,8 +16,8 @@ trait Block{
 
 
   protected def addLineSeparator(t : String) : String = {
-    if(t.length == 0) return ""
-    val end = if(t.endsWith("\n") || t.endsWith("\r") ){
+    if(t.trim.length == 0) return t
+    val end = if("""\n\s*$""".r.findFirstIn(t).isDefined ){
       ""
     }else Env.lineSeparator + " " * indent
 
