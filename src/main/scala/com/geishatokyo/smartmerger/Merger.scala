@@ -77,7 +77,7 @@ object Merger {
    * @return
    */
   def forMySQL = {
-    val parser = MarkerParser.doubleSharpParser()
+    val parser = MarkerParser.doubleHyphenParser()
     val merger = new Injector(mergeRule)
     Merger(parser,merger)
   }

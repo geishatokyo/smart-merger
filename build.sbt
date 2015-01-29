@@ -6,7 +6,7 @@ organization := "com.geishatokyo"
 
 scalaVersion := "2.11.1"
 
-version := "0.1.1-SNAPSHOT"
+version := "0.1.2-SNAPSHOT"
 
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",

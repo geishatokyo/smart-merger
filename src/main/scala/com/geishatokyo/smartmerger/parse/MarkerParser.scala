@@ -35,6 +35,17 @@ object MarkerParser{
       CommentBlock("<!--",Some("-->")) :: Nil,
       Replace("@replace", "@end") :: Hold("@hold", "@end") :: Insert("@insert") :: SkipMergeParser("@skip_merge") :: Nil)
   }
+
+
+  /**
+   * コメントアウト--タイプの言語用パーサー
+   * @return
+   */
+  def doubleHyphenParser() = {
+    new MarkerParser(
+      CommentBlock("--",None) :: Nil,
+      Replace("@replace", "@end") :: Hold("@hold", "@end") :: Insert("@insert") :: SkipMergeParser("@skip_merge") :: Nil)
+  }
 }
 
 case class CommentBlock(start : String,end : Option[String]){
